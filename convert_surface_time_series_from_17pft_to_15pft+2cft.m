@@ -4,7 +4,8 @@
 clc; clear;
 
 originfile = '/compyfs/inputdata/lnd/clm2/surfdata_map/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c200924.nc';
-targetfile = '/compyfs/zhou014/datasets/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c201008.nc';
+targetfile = '/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c230602.nc';
+surfacefile = '/compyfs/inputdata/lnd/clm2/surfdata_map/surfdata_0.5x0.5_simyr1850_c211019.nc';
 hyde = load('HYDE-1850-2010-irr-rainfed-km2.mat');
 
 % Step 1
@@ -42,9 +43,10 @@ for y = 1:17
     
     newfields.(var)(:,:,2,yid) = temp(:,:,16,yid).* repmat(ratio_y,1,1,1,length(yid));
     newfields.(var)(:,:,1,yid) = temp(:,:,16,yid).* repmat((1-ratio_y),1,1,1,length(yid));
+
 end
 
-var = char(newv(3)); 
+var = char(newv(3)); %PCT_CROP
 pc = ncread(originfile,'PCT_CROP');
 newfields.(var) = repmat(pc,1,1,166);
 
@@ -142,3 +144,35 @@ end
 ncwrite(targetfile,'PCT_CROP',pct_crop_new); %total fraction of cfts
 ncwrite(targetfile,'PCT_NAT_PFT',pct_nat_new); %fraction of nat pfts, sum = 100
 ncwrite(targetfile,'PCT_CFT',pct_cft_new); %fraction of cfts, sum = 100
+
+%% new changes
+pct_nat = ncread(targetfile,'PCT_NAT_PFT');
+pct_cft = ncread(targetfile,'PCT_CFT');
+pct_crop = ncread(targetfile,'PCT_CROP');
+
+pct_nat1 = ncread(surfacefile,'PCT_NAT_PFT');
+pct_cft1 = ncread(surfacefile,'PCT_CFT');
+pct_crop1 = ncread(surfacefile,'PCT_CROP');
+pct_natveg1 = ncread(surfacefile,'PCT_NATVEG');
+
+pct_nat(:,:,:,1) = pct_nat1;
+pct_cft(:,:,:,1) = pct_cft1;
+pct_crop(:,:,1) = pct_crop1;
+
+for y = 2:166
+    disp(y);
+    cft_x = pct_cft(:,:,:,y);
+    cft_x(:,:,1) = 100 - cft_x(:,:,2);
+    pct_cft(:,:,:,y) = cft_x;
+    
+    pft_x = pct_nat(:,:,:,y);
+    before = sum(pft_x(:,:,1),'all');
+    pft_x(:,:,1) = 100 - sum(pft_x(:,:,2:end),3);
+    after = sum(pft_x(:,:,1),'all');
+    disp(after-before);
+    pct_nat(:,:,:,y) = pft_x;
+end
+    
+ncwrite(targetfile,'PCT_CROP',pct_crop); %total fraction of cfts
+ncwrite(targetfile,'PCT_NAT_PFT',pct_nat); %fraction of nat pfts, sum = 100
+ncwrite(targetfile,'PCT_CFT',pct_cft); %fraction of cfts, sum = 100
