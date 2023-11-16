@@ -9,10 +9,13 @@
 
 clc; clear;
 
-originfile = '/compyfs/inputdata/lnd/clm2/surfdata_map/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c200924.nc';
-targetfile = '/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c230726.nc';
-surfacefile = '/compyfs/inputdata/lnd/clm2/surfdata_map/surfdata_0.5x0.5_simyr1850_c211019.nc';
+originfile = '/compyfs/inputdata/lnd/clm2/surfdata_map/landuse.timeseries_0.5x0.5_rcp3.0_simyr2015-2100_c231109.nc';
+targetfile = '/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_rcp3.0_simyr2015-2100_c231113.nc';
+surfacefile = '/compyfs/zhou014/datasets/surfdata_0.5x0.5_rcp3.0_simyr2015_c231113.nc';
 load('HYDE3.2-1850-2015-irr-rainfed-km2-annual.mat');
+
+%yrnum = 166; % 1850-2015
+yrnum = 86; % 2015-2100
 
 %%%%%%%%%%%%%%%%
 % Step 1
@@ -48,6 +51,11 @@ hyde32_interp.rain(isnan(hyde32_interp.rain)) = 0;
 irr_ratio_all = hyde32_interp.irr(:,:,:)./(hyde32_interp.irr(:,:,:)+hyde32_interp.rain(:,:,:)); %ratio
 irr_ratio_all(isnan(irr_ratio_all)) = 0;
 
+%%%%%%%%%% keep the irr_ratio constant at the level of 2015
+%%%%%%%%%% only use this for 2015-2100 file
+irr_ratio_all = repmat(irr_ratio_all(:,:,end),[1,1,yrnum]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %%%%%%% remove tiny ratio values to reduce tiny CFT fractions
 threshold = 1e-3;
 irr_ratio_all(irr_ratio_all<threshold) = 0;
@@ -57,7 +65,7 @@ irr_ratio_all(irr_ratio_all>(1-threshold) & irr_ratio_all<1) = 1;
 
 pct_crop_new = zeros(size(pct_natveg)); % this is for the next step, PCT_CROP
 
-for y = 1:166
+for y = 1:yrnum
     S_nat = sum(temp(:,:,1:15,y),3); % total fraction of natural veg
     S_crp = sum(temp(:,:,16:17,y),3); % total fraction of crop, 1st is rainfed, 2nd is irrigated
 
@@ -133,7 +141,7 @@ netcdf.close(ncid);
 pct_nat = ncread(targetfile,'PCT_NAT_PFT');
 pct_nat_new = pct_nat;
 
-for tstep = 1:166
+for tstep = 1:yrnum
     disp(tstep);
     
     S_nat = sum(pct_nat(:,:,:,tstep),3);

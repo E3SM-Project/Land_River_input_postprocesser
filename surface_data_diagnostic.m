@@ -1,3 +1,4 @@
+clc; clear;
 %% This following script produces three plots for one single gridcell:
 % 1. landunit fraction for this gridcell
 % 2. fractions of natural PFTs
@@ -5,13 +6,12 @@
 % available), this plot will be replaced by a new landunit fraction that
 % assumes the last two PFTs in the original dataset is converted to CFTs
 
-clc; clear;
-ncfile = '/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c230702_noC3grass_2cells.nc';
-figuredir = '/qfs/people/zhou014/';
+ncfile = '\\compy01/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c230722_noC3grass_2cells.nc';
+figuredir = 'E:\OneDrive - PNNL\Publication\under_development\BGC\new\';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % this is the gridcell you want to check
-latitude = -14.25; longitude = 34.75; %
+latitude = -30.25; longitude = -58.75; %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 info = ncinfo(ncfile);
@@ -50,6 +50,26 @@ end
 
 ppft = squeeze(ncread(ncfile,'PCT_NAT_PFT',[x y 1 1], [1 1 inf inf]));
 
+%%%%%%%%%%% define PFT names
+pftnames = {'not vegetated',...
+'nleaf eve tem',...
+'nleaf eve bor',...
+'nleaf dec bor',...
+'bleaf eve tro',...
+'bleaf eve tem',...
+'bleaf dec tro',...
+'bleaf dec tem',...
+'bleaf dec bor',...
+'eve shrub',...
+'dec tem shrub',...
+'dec bor shrub',...
+'c3 arctic',...
+'c3 non-arctic',...
+'c4 ',...
+'c3 crop',...
+'c3 irri'};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if cft
     frac_all = [pglacier(x,y); purban(x,y); plake(x,y); pwetland(x,y); pnatveg(x,y)];
     frac_all = repmat(frac_all,1,166);
@@ -78,7 +98,8 @@ subplot(3,1,2)
 temp = sum(ppft,2);
 ids = find (temp>0);
 area(1850:2015,ppft(ids,:)')
-legend(num2str(ids),'Location','southoutside','Orientation','horizontal')
+legend(pftnames(ids),'Location','east','Orientation','vertical');
+%legend(num2str(ids),'Location','southoutside','Orientation','horizontal')
 axis tight
 xlabel('year'); ylabel('percentage');
 title (['natpft ' num2str(latitude) ', ' num2str(longitude)]);
@@ -103,11 +124,11 @@ filename = [num2str(latitude) '_' num2str(longitude) '.png'];
 set(gcf,'PaperPositionMode','auto')
 print(fg,'-dpng', [figuredir filename],'-r400');
 close (fg)
-%% this script check consistency between surface data and first year of transient data
+%% check consistency between surface data and first year of transient data
 clc; clear;
 
 % surface dataset
-sfile = '/compyfs/inputdata/lnd/clm2/surfdata_map/surfdata_0.5x0.5_simyr1850_c211019.nc';
+sfile = '\\compy01/compyfs/inputdata/lnd/clm2/surfdata_map/surfdata_0.5x0.5_simyr1850_c211019.nc';
 % transient landuse dataset
 tfile = '/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c230602_noC3grass_2cells.nc';
 
@@ -159,7 +180,7 @@ frac_all_s = [pglacier(x,y); purban(x,y); plake(x,y); pwetland(x,y); pcrop(x,y);
 
 scatter(frac_all_t,frac_all_s)
 
-%% this script check if there's any tiny values in PCT_CFT, PCT_CROP, and PCT_NAT_PFT
+%% check if there's any tiny values in PCT_CFT, PCT_CROP, and PCT_NAT_PFT
 clc;clear;
 ncfile = '/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c230722.nc'; %0, 0, 0
 
@@ -177,7 +198,7 @@ temp= ncread(ncfile,'PCT_NAT_PFT');
 temp = temp(:,:,:,2:end);
 sum(temp>0&temp<thre,'all')
 
-%% this script check if everything adds to 100 for CFT and PFT
+%% check if everything adds to 100 for CFT and PFT
 clc;clear;
 ncfile = '/compyfs/zhou014/datasets/E3SM_inputs/landuse.timeseries_0.5x0.5_HIST_simyr1850-2015_c230722.nc'; %0, 0, 0
 

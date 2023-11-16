@@ -9,8 +9,8 @@
 
 %%%%%%%%%%%%%%%%%%%%%
 clc; clear;
-originfile = '/compyfs/inputdata/lnd/clm2/surfdata_map/surfdata_0.5x0.5_simyr1850_c200924.nc';
-targetfile = '/compyfs/zhou014/datasets/E3SM_inputs/surfdata_0.5x0.5_simyr1850_c230726.nc';
+originfile = '/compyfs/inputdata/lnd/clm2/surfdata_map/surfdata_0.5x0.5_rcp3.0_simyr2015_c231109.nc';
+targetfile = '/compyfs/zhou014/datasets/E3SM_inputs/surfdata_0.5x0.5_rcp3.0_simyr2015_c231113.nc';
 irrigfile = '/compyfs/zhou014/datasets/E3SM_inputs/surfdata_0.5x0.5_simyr2000_c190418_firrig_updated.nc'; % a surface dataset that includes Firrig, Fsurf, and Fgrd
 load('HYDE3.2-1850-2015-irr-rainfed-km2-annual.mat');
 
@@ -47,7 +47,9 @@ S_crp = sum(temp(:,:,16:17),3); % total fraction of crop
 hyde32_interp.irr(isnan(hyde32_interp.irr)) = 0;
 hyde32_interp.rain(isnan(hyde32_interp.rain)) = 0;
 
-irr_ratio = hyde32_interp.irr(:,:,1)./(hyde32_interp.irr(:,:,1)+hyde32_interp.rain(:,:,1)); %ratio for 1850
+%irr_ratio = hyde32_interp.irr(:,:,1)./(hyde32_interp.irr(:,:,1)+hyde32_interp.rain(:,:,1)); %ratio for 1850
+irr_ratio = hyde32_interp.irr(:,:,end)./(hyde32_interp.irr(:,:,end)+hyde32_interp.rain(:,:,end)); %ratio for 2015
+
 irr_ratio(isnan(irr_ratio)) = 0;
 
 %%%%%%% remove tiny ratio values to reduce tiny PCT_CFT fractions
@@ -131,10 +133,19 @@ netcdf.close(ncid);
 %%%%%%%%%%%%%%%%
 
 pct_nat = ncread(targetfile,'PCT_NAT_PFT');
+pct_nat_new = zeros(size(pct_nat));
 S_nat = sum(pct_nat,3);
 
 for i = 1:15
-    pct_nat(:,:,i) = 100*pct_nat(:,:,i)./S_nat;
+    pct_nat_new(:,:,i) = 100*pct_nat(:,:,i)./S_nat;
+end
+
+k = isnan(pct_nat_new);
+[o, p, q] = ind2sub(size(k),find(k==1));
+
+for i = 1: length(o) 
+    pct_nat_new(o(i),p(i),1) = 100;
+    pct_nat_new(o(i),p(i),2:15) = 0;
 end
 
 % here we don't check and remove tiny values in PCT_NAT_PFT to keep consistency with the original 17 PFT data
@@ -155,4 +166,4 @@ pct_natveg_new = pct_natveg-pct_crop_new;
 
 ncwrite(targetfile,'PCT_CROP',pct_crop_new); %total fraction of cfts
 ncwrite(targetfile,'PCT_NATVEG',pct_natveg_new); %total fraction of nat pfts
-ncwrite(targetfile,'PCT_NAT_PFT',pct_nat); %fraction of nat pfts, sum = 100
+ncwrite(targetfile,'PCT_NAT_PFT',pct_nat_new); %fraction of nat pfts, sum = 100
